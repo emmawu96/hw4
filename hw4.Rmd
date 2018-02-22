@@ -6,7 +6,6 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(knitr)
 ```
@@ -19,7 +18,7 @@ A tibble will print with the comment "A tible: n x m" when called. In addition, 
 #####2. Compare and contrast the following operations on a data.frame and equivalent tibble. What is different? Why might the default data frame behaviours cause you frustration?
 
 data.frame:
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 df <- data.frame(abc = 1, xyz = "a")
 df$x
 df[, "xyz"]
@@ -27,7 +26,7 @@ df[, c("abc", "xyz")]
 ```
 
 tibble:
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 dft <- tibble(abc = 1, xyz = "a")
 dft$x
 print(dft[, "xyz"])
@@ -41,14 +40,14 @@ Using tibble, the outputs are in neat table format, without redundant informatio
 #####3. If you have the name of a variable stored in an object, e.g. var <- "mpg", how can you extract the reference variable from a tibble?
 
 Double [[]] extracts data from the reference.
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 var <- "mpg"
 dft[[var]]
 ```
 
 #####4. Practice referring to non-syntactic names in the following data frame by:
 ######Extracting the variable called 1.
-```{r, echo=T}
+```{r echo=T, warning=FALSE}
 annoying <- tibble(
   `1` = 1:10,
   `2` = `1` * 2 + rnorm(length(`1`))
@@ -57,33 +56,33 @@ annoying %>% .$'1'
 ```
 
 ######Plotting a scatterplot of 1 vs 2.
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 ggplot(annoying) + 
   geom_point(aes(`1`,`2`))
 ```
 
 ######Creating a new column called 3 which is 2 divided by 1.
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 annoying <- annoying %>% mutate(`3` = `2` / `1`)
 annoying
 ```
 
 ######Renaming the columns to one, two and three.
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 rename(annoying,one=`1`,two=`2`,three=`3`)
 annoying
 ```
 
 #####5. What does tibble::enframe() do? When might you use it?
 It converts named atomic vectors or lists to two-column data frames.
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 enframe(c(a = 5, b = 7))
 ```
 
 #####6. What option controls how many additional column names are printed at the footer of a tibble?
 print(x,...n_extra = n)
 The example prints a tibble table with 2 additional column names in the footnote: 
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 ex106 <- tibble(
   a= c(1:10), b= c(11:20), c= c(21:30), d= c(31:40), e= c(41:50), f= c(51:60), g= c(61:70), h= c(71:80), i= c(81:90),
   a1= c(1:10), b1= c(11:20), c1= c(21:30), d1= c(31:40), e1= c(41:50), f1= c(51:60), g1= c(61:70), h1= c(71:80), i1= c(81:90),
@@ -94,7 +93,7 @@ print(ex106, n_extra =2)
 
 ##12.6.1 Exercises
 Repeat the case study
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 who1 <- who %>% 
   gather(new_sp_m014:newrel_f65, key = "key", value = "cases", na.rm = TRUE)
 who2 <- who1 %>% 
@@ -117,7 +116,7 @@ who %>%
 #####1. In this case study I set na.rm = TRUE just to make it easier to check that we had the correct values. Is this reasonable? Think about how missing values are represented in this dataset. Are there implicit missing values? What’s the difference between an NA and zero?
 
 There is difference between NA and zero in this case. Country and year with 0 cases are not listed as NA nor vise versa. Zero means no cases instead of missing entry. It does not change any information to omit the NA ones here.
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 who1 %>%
   filter(cases == 0)
 whoex1 <-  who %>% 
@@ -129,7 +128,7 @@ whoex1
 
 #####2. What happens if you neglect the mutate() step? (mutate(key = stringr::str_replace(key, "newrel", "new_rel")) 
 
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 whoex2 <- who %>%
           gather(code, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
           separate(code, c("new", "type", "sexage"))
@@ -141,29 +140,25 @@ There is warning for missing pieces, and all sexage filled with NA. For all 'new
 #####3. I claimed that iso2 and iso3 were redundant with country. Confirm this claim.
 
 None of the countries have multiple iso2 or iso3 codes. 
-```{r, echo=T}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 whoex3 <- select(who3, country, iso2, iso3) %>%
-           distinct() %>%
-           group_by(country)
-whoex3 %>% count(vars="country") %>% filter(freq>1)
+           group_by(country)  
+n_groups(whoex3)
+whoex3_2 <-  whoex3 %>% group_by(country,iso2,iso3) 
+n_groups(whoex3_2)
 
 ```
 
 
 #####4. For each country, year, and sex compute the total number of cases of TB. Make an informative visualisation of the data.
-```{r,echo=T}
-# who5 %>%
-#   group_by("country", "year", "sex") %>%
-#   summarise("cases" = sum(who5$cases)) %>%
-#   ggplot(aes(x = who5$year, y = who5$cases, color = who5$country)) +
-#   geom_line() +
-#   facet_wrap(~who5$sex)+ theme(legend.position = "none")
-
-group_by(who5,country, year, sex) %>%
-  # summarise(cases = sum(cases)) %>%
-  # unite(country_sex, country, sex, remove = FALSE) %>%
-  # ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
-  # geom_line()
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+whoex4 <- who5 %>%
+  group_by(country, year, sex) %>%
   summarise(cases = sum(cases))
+whoex4
+  
+whoex4 %>% filter(year>1990) %>%
+  ggplot(aes(x = year, y = cases, group = country, color= country))   +geom_line()+ facet_wrap(~sex)+ theme(legend.position = "none")
+  
 
 ```
