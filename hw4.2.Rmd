@@ -1,0 +1,110 @@
+---
+title: "hw4.2"
+author: "Yue Wu"
+date: "2/24/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+library(foreign)
+library(stringr)
+library(plyr)
+library(reshape2)
+source("pew.R")
+# duplicated name 'raw' for dataset in both pew and billboard
+# renaming pew data to raw1
+raw1 <- raw
+source("billboard.R")
+```
+
+##10.5 Exercises
+#####5. What does tibble::enframe() do? When might you use it?
+It converts vectors or lists to  two-column data frames.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+enframe(c(a = 5, b = 7))
+```
+
+##12.6.1 Exercises
+Repeat the case study
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+who1 <- who %>% 
+  gather(new_sp_m014:newrel_f65, key = "key", value = "cases", na.rm = TRUE)
+who2 <- who1 %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+who3 <- who2 %>% 
+  separate(key, c("new", "type", "sexage"), sep = "_")
+who4 <- who3 %>% 
+  select(-new, -iso2, -iso3)
+who5 <- who4 %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+who %>%
+  gather(code, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+  mutate(code = stringr::str_replace(code, "newrel", "new_rel")) %>%
+  separate(code, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+
+```
+
+#####3. I claimed that iso2 and iso3 were redundant with country. Confirm this claim.
+
+None of the countries have multiple iso2 or iso3 codes. 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+whoex3 <- select(who3, country, iso2, iso3) %>%
+           group_by(country)  
+n_groups(whoex3)
+whoex3_2 <-  whoex3 %>% group_by(country,iso2,iso3) 
+n_groups(whoex3_2)
+
+```
+
+
+#####4. For each country, year, and sex compute the total number of cases of TB. Make an informative visualisation of the data.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+whoex4 <- who5 %>%
+  group_by(country, year, sex) %>%
+  dplyr::summarise(cases=sum(cases))
+whoex4
+  
+whoex4  %>% filter(year>1990) %>%
+  ggplot(aes(x = year, y = cases, group = country, color= country))   +geom_line()+ facet_wrap(~sex)+ theme(legend.position = "none")
+  
+
+```
+
+
+## Tidying: Table 4 to Table 6
+#### Table 4
+```{r table4, ech=T}
+raw1[1:10,1:7]
+```
+Table 4: The first ten rows of data on income and religion from the Pew Forum. Three columns, $75–100k, $100–150k and >150k, have been omitted.
+
+#### Table 6
+```{r table6, echo=T}
+tb6 <- as.tibble(raw1)
+tb6 %>% gather(-religion, key = "income", value = "freq") %>% arrange(religion) %>% head(n=10)
+```
+Table 6: The first ten rows of the tidied Pew survey dataset on income and religion. The column has been renamed to income, and value to freq.
+
+## Tidying: Table 7 to Table 8
+#### Table 7
+```{r table7, echo=T}
+raw[c(1:3, 6:10),1:8]
+```
+Table 7: The first eight Billboard top hits for 2000. Other columns not shown are $wk4, wk5,..., wk75$.
+
+
+#### Table 8
+```{r table8, echo=T}
+tb7 <- as.tibble(raw)
+tb8 <- tb7 %>% gather(key= "week", value= "rank", -year, -artist, -track, -time, -date.entered ) %>%
+  arrange(artist) %>%
+  select(year,artist, time, track, date=date.entered,week,rank) %>%
+  filter(!is.na(rank))
+head(tb8,n=15)
+```
+Table 8: First fifteen rows of the tidied Billboard dataset. The date column does not appear in the original table, but can be computed from $date.entered$ and $week$.
