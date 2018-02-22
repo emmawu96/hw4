@@ -1,0 +1,169 @@
+---
+title: "Homework 4"
+author: "Yue Wu"
+date: "2/20/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+```
+
+##10.5 Exercises
+#####1. How can you tell if an object is a tibble? (Hint: try printing mtcars, which is a regular data frame).
+
+A tibble will print with the comment "A tible: n x m" when called. In addition, it automatically display variable types. A R-built-in data.frame shows none of the above when called.
+
+#####2. Compare and contrast the following operations on a data.frame and equivalent tibble. What is different? Why might the default data frame behaviours cause you frustration?
+
+data.frame:
+```{r, echo=T}
+df <- data.frame(abc = 1, xyz = "a")
+df$x
+df[, "xyz"]
+df[, c("abc", "xyz")]
+```
+
+tibble:
+```{r, echo=T}
+dft <- tibble(abc = 1, xyz = "a")
+dft$x
+print(dft[, "xyz"])
+1
+print(dft[, c("abc", "xyz")])
+```
+
+Using data.frame, the outputs consist of both data value and "levels", which repeat each other. 
+Using tibble, the outputs are in neat table format, without redundant information.
+
+#####3. If you have the name of a variable stored in an object, e.g. var <- "mpg", how can you extract the reference variable from a tibble?
+
+Double [[]] extracts data from the reference.
+```{r, echo=T}
+var <- "mpg"
+dft[[var]]
+```
+
+#####4. Practice referring to non-syntactic names in the following data frame by:
+######Extracting the variable called 1.
+```{r, echo=T}
+annoying <- tibble(
+  `1` = 1:10,
+  `2` = `1` * 2 + rnorm(length(`1`))
+)
+annoying %>% .$'1'
+```
+
+######Plotting a scatterplot of 1 vs 2.
+```{r, echo=T}
+ggplot(annoying) + 
+  geom_point(aes(`1`,`2`))
+```
+
+######Creating a new column called 3 which is 2 divided by 1.
+```{r, echo=T}
+annoying <- annoying %>% mutate(`3` = `2` / `1`)
+annoying
+```
+
+######Renaming the columns to one, two and three.
+```{r, echo=T}
+rename(annoying,one=`1`,two=`2`,three=`3`)
+annoying
+```
+
+#####5. What does tibble::enframe() do? When might you use it?
+It converts named atomic vectors or lists to two-column data frames.
+```{r, echo=T}
+enframe(c(a = 5, b = 7))
+```
+
+#####6. What option controls how many additional column names are printed at the footer of a tibble?
+print(x,...n_extra = n)
+The example prints a tibble table with 2 additional column names in the footnote: 
+```{r, echo=T}
+ex106 <- tibble(
+  a= c(1:10), b= c(11:20), c= c(21:30), d= c(31:40), e= c(41:50), f= c(51:60), g= c(61:70), h= c(71:80), i= c(81:90),
+  a1= c(1:10), b1= c(11:20), c1= c(21:30), d1= c(31:40), e1= c(41:50), f1= c(51:60), g1= c(61:70), h1= c(71:80), i1= c(81:90),
+  a2= c(1:10), b2= c(11:20), c2= c(21:30), d2= c(31:40), e2= c(41:50), f2= c(51:60), g2= c(61:70), h2= c(71:80), i2= c(81:90)
+)
+print(ex106, n_extra =2)
+```
+
+##12.6.1 Exercises
+Repeat the case study
+```{r, echo=T}
+who1 <- who %>% 
+  gather(new_sp_m014:newrel_f65, key = "key", value = "cases", na.rm = TRUE)
+who2 <- who1 %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+who3 <- who2 %>% 
+  separate(key, c("new", "type", "sexage"), sep = "_")
+who4 <- who3 %>% 
+  select(-new, -iso2, -iso3)
+who5 <- who4 %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+who %>%
+  gather(code, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+  mutate(code = stringr::str_replace(code, "newrel", "new_rel")) %>%
+  separate(code, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+
+```
+
+#####1. In this case study I set na.rm = TRUE just to make it easier to check that we had the correct values. Is this reasonable? Think about how missing values are represented in this dataset. Are there implicit missing values? What’s the difference between an NA and zero?
+
+There is difference between NA and zero in this case. Country and year with 0 cases are not listed as NA nor vise versa. Zero means no cases instead of missing entry. It does not change any information to omit the NA ones here.
+```{r, echo=T}
+who1 %>%
+  filter(cases == 0)
+whoex1 <-  who %>% 
+  gather(new_sp_m014:newrel_f65, key = "key", value = "cases", na.rm = F) %>%
+  filter(is.na(cases))
+whoex1
+
+```
+
+#####2. What happens if you neglect the mutate() step? (mutate(key = stringr::str_replace(key, "newrel", "new_rel")) 
+
+```{r, echo=T}
+whoex2 <- who %>%
+          gather(code, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+          separate(code, c("new", "type", "sexage"))
+filter(whoex2, new == "newrel") 
+```
+
+There is warning for missing pieces, and all sexage filled with NA. For all 'newrel' observations, type = m014. 
+
+#####3. I claimed that iso2 and iso3 were redundant with country. Confirm this claim.
+
+None of the countries have multiple iso2 or iso3 codes. 
+```{r, echo=T}
+whoex3 <- select(who3, country, iso2, iso3) %>%
+           distinct() %>%
+           group_by(country)
+whoex3 %>% count(vars="country") %>% filter(freq>1)
+
+```
+
+
+#####4. For each country, year, and sex compute the total number of cases of TB. Make an informative visualisation of the data.
+```{r,echo=T}
+# who5 %>%
+#   group_by("country", "year", "sex") %>%
+#   summarise("cases" = sum(who5$cases)) %>%
+#   ggplot(aes(x = who5$year, y = who5$cases, color = who5$country)) +
+#   geom_line() +
+#   facet_wrap(~who5$sex)+ theme(legend.position = "none")
+
+group_by(who5,country, year, sex) %>%
+  # summarise(cases = sum(cases)) %>%
+  # unite(country_sex, country, sex, remove = FALSE) %>%
+  # ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
+  # geom_line()
+  summarise(cases = sum(cases))
+
+```
