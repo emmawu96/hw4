@@ -74,7 +74,11 @@ annoying
 ```
 
 #####5. What does tibble::enframe() do? When might you use it?
+<<<<<<< HEAD
 It converts vectors or lists to  two-column data frames.
+=======
+It converts named atomic vectors or lists to two-column data frames.
+>>>>>>> 5c319bde447b9be604eb71eda7357c8e010b5856
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 enframe(c(a = 5, b = 7))
 ```
@@ -154,7 +158,11 @@ n_groups(whoex3_2)
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 whoex4 <- who5 %>%
   group_by(country, year, sex) %>%
+<<<<<<< HEAD
   dplyr::summarise(cases=sum(cases))
+=======
+  summarise(cases = sum(cases))
+>>>>>>> 5c319bde447b9be604eb71eda7357c8e010b5856
 whoex4
   
 whoex4 %>% filter(year>1990) %>%
